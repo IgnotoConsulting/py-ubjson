@@ -1,6 +1,6 @@
 # Overview
 
-This is a Python v3.2+ (and 2.7+) [Universal Binary JSON](http://ubjson.org) encoder/decoder based on the [draft-12](UBJSON-Specification.md) specification.
+This is a Python v3.8+ [Universal Binary JSON](http://ubjson.org) encoder/decoder based on the [draft-12](UBJSON-Specification.md) specification.
 
 
 # Installing / packaging
@@ -20,7 +20,6 @@ PYUBJSON_NO_EXTENSION=1 python3 setup.py install
 **Notes**
 
 - The extension module is not required but provide a significant speed boost.
-- The above can also be run with v2.7+
 - This module is also available via [Anaconda (conda-forge)](https://anaconda.org/conda-forge/py-ubjson)
 - PyPI releases are signed with the [Iotic Labs Software release signing key](https://developer.iotic-labs.com/iotic-labs.com.asc)
 - At run time, one can check whether compiled version is in use via the _ubjson.EXTENSION_ENABLED_ boolean

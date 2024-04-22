@@ -18,8 +18,8 @@
 from io import BytesIO
 from struct import Struct, pack, error as StructError
 from decimal import Decimal, DecimalException
+from sys import intern as intern_unicode
 
-from .compat import raise_from, intern_unicode
 from .markers import (TYPE_NONE, TYPE_NULL, TYPE_NOOP, TYPE_BOOL_TRUE, TYPE_BOOL_FALSE, TYPE_INT8, TYPE_UINT8,
                       TYPE_INT16, TYPE_INT32, TYPE_INT64, TYPE_FLOAT32, TYPE_FLOAT64, TYPE_HIGH_PREC, TYPE_CHAR,
                       TYPE_STRING, OBJECT_START, OBJECT_END, ARRAY_START, ARRAY_END, CONTAINER_TYPE, CONTAINER_COUNT)
@@ -65,9 +65,9 @@ def __decode_high_prec(fp_read, marker):
     try:
         return Decimal(raw.decode('utf-8'))
     except UnicodeError as ex:
-        raise_from(DecoderException('Failed to decode decimal string'), ex)
+        raise DecoderException('Failed to decode decimal string') from ex
     except DecimalException as ex:
-        raise_from(DecoderException('Failed to decode decimal'), ex)
+        raise DecoderException('Failed to decode decimal') from ex
 
 
 def __decode_int_non_negative(fp_read, marker):
@@ -83,49 +83,49 @@ def __decode_int8(fp_read, marker):
     try:
         return __SMALL_INTS_DECODED[fp_read(1)]
     except KeyError as ex:
-        raise_from(DecoderException('Failed to unpack int8'), ex)
+        raise DecoderException('Failed to unpack int8') from ex
 
 
 def __decode_uint8(fp_read, marker):
     try:
         return __SMALL_UINTS_DECODED[fp_read(1)]
     except KeyError as ex:
-        raise_from(DecoderException('Failed to unpack uint8'), ex)
+        raise DecoderException('Failed to unpack uint8') from ex
 
 
 def __decode_int16(fp_read, marker):
     try:
         return __UNPACK_INT16(fp_read(2))[0]
     except StructError as ex:
-        raise_from(DecoderException('Failed to unpack int16'), ex)
+        raise DecoderException('Failed to unpack int16') from ex
 
 
 def __decode_int32(fp_read, marker):
     try:
         return __UNPACK_INT32(fp_read(4))[0]
     except StructError as ex:
-        raise_from(DecoderException('Failed to unpack int32'), ex)
+        raise DecoderException('Failed to unpack int32') from ex
 
 
 def __decode_int64(fp_read, marker):
     try:
         return __UNPACK_INT64(fp_read(8))[0]
     except StructError as ex:
-        raise_from(DecoderException('Failed to unpack int64'), ex)
+        raise DecoderException('Failed to unpack int64') from ex
 
 
 def __decode_float32(fp_read, marker):
     try:
         return __UNPACK_FLOAT32(fp_read(4))[0]
     except StructError as ex:
-        raise_from(DecoderException('Failed to unpack float32'), ex)
+        raise DecoderException('Failed to unpack float32') from ex
 
 
 def __decode_float64(fp_read, marker):
     try:
         return __UNPACK_FLOAT64(fp_read(8))[0]
     except StructError as ex:
-        raise_from(DecoderException('Failed to unpack float64'), ex)
+        raise DecoderException('Failed to unpack float64') from ex
 
 
 def __decode_char(fp_read, marker):
@@ -135,7 +135,7 @@ def __decode_char(fp_read, marker):
     try:
         return raw.decode('utf-8')
     except UnicodeError as ex:
-        raise_from(DecoderException('Failed to decode char'), ex)
+        raise DecoderException('Failed to decode char') from ex
 
 
 def __decode_string(fp_read, marker):
@@ -147,7 +147,7 @@ def __decode_string(fp_read, marker):
     try:
         return raw.decode('utf-8')
     except UnicodeError as ex:
-        raise_from(DecoderException('Failed to decode string'), ex)
+        raise DecoderException('Failed to decode string') from ex
 
 
 # same as string, except there is no 'S' marker
@@ -159,7 +159,7 @@ def __decode_object_key(fp_read, marker, intern_object_keys):
     try:
         return intern_unicode(raw.decode('utf-8')) if intern_object_keys else raw.decode('utf-8')
     except UnicodeError as ex:
-        raise_from(DecoderException('Failed to decode object key'), ex)
+        raise DecoderException('Failed to decode object key') from ex
 
 
 __METHOD_MAP = {TYPE_NULL: (lambda _, __: None),
@@ -387,7 +387,7 @@ def load(fp, no_bytes=False, object_hook=None, object_pairs_hook=None, intern_ob
             return __decode_object(fp_read, bool(no_bytes), object_hook, object_pairs_hook, intern_object_keys)
         raise DecoderException('Invalid marker')
     except DecoderException as ex:
-        raise_from(DecoderException(ex.args[0], position=(fp.tell() if hasattr(fp, 'tell') else None)), ex)
+        raise DecoderException(ex.args[0], position=(fp.tell() if hasattr(fp, 'tell') else None)) from ex
 
 
 def loadb(chars, no_bytes=False, object_hook=None, object_pairs_hook=None, intern_object_keys=False):

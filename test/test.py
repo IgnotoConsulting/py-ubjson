@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-from sys import version_info, getrecursionlimit, setrecursionlimit
+from sys import getrecursionlimit
 from functools import partial
 from io import BytesIO, SEEK_END
 from unittest import TestCase, skipUnless
@@ -27,21 +27,9 @@ from ubjson import (dump as ubjdump, dumpb as ubjdumpb, load as ubjload, loadb a
 from ubjson.markers import (TYPE_NULL, TYPE_NOOP, TYPE_BOOL_TRUE, TYPE_BOOL_FALSE, TYPE_INT8, TYPE_UINT8, TYPE_INT16,
                             TYPE_INT32, TYPE_INT64, TYPE_FLOAT32, TYPE_FLOAT64, TYPE_HIGH_PREC, TYPE_CHAR, TYPE_STRING,
                             OBJECT_START, OBJECT_END, ARRAY_START, ARRAY_END, CONTAINER_TYPE, CONTAINER_COUNT)
-from ubjson.compat import INTEGER_TYPES
 # Pure Python versions
 from ubjson.encoder import dump as ubjpuredump, dumpb as ubjpuredumpb
 from ubjson.decoder import load as ubjpureload, loadb as ubjpureloadb
-
-PY2 = version_info[0] < 3
-
-if PY2:  # pragma: no cover
-    def u(obj):
-        """Casts obj to unicode string, unless already one"""
-        return obj if isinstance(obj, unicode) else unicode(obj)  # noqa: F821 pylint: disable=undefined-variable
-else:  # pragma: no cover
-    def u(obj):
-        """Casts obj to unicode string, unless already one"""
-        return obj if isinstance(obj, str) else str(obj)
 
 
 class TestEncodeDecodePlain(TestCase):  # pylint: disable=too-many-public-methods
@@ -58,12 +46,8 @@ class TestEncodeDecodePlain(TestCase):  # pylint: disable=too-many-public-method
     def __format_in_out(obj, encoded):
         return '\nInput:\n%s\nOutput (%d):\n%s' % (pformat(obj), len(encoded), encoded)
 
-    if PY2:  # pragma: no cover
-        def type_check(self, actual, expected):
-            self.assertEqual(actual, expected)
-    else:  # pragma: no cover
-        def type_check(self, actual, expected):
-            self.assertEqual(actual, ord(expected))
+    def type_check(self, actual, expected):
+        self.assertEqual(actual, ord(expected))
 
     # based on math.isclose available in Python v3.5
     @staticmethod
@@ -106,17 +90,17 @@ class TestEncodeDecodePlain(TestCase):  # pylint: disable=too-many-public-method
             self.ubjloadb(b'')
 
     def test_invalid_data(self):
-        for invalid in (u('unicode'), 123):
+        for invalid in ('unicode', 123):
             with self.assertRaises(TypeError):
                 self.ubjloadb(invalid)
 
     def test_trailing_input(self):
-        self.assertEqual(self.ubjloadb(TYPE_BOOL_TRUE * 10), True)
+        self.assertTrue(self.ubjloadb(TYPE_BOOL_TRUE * 10))
 
     def test_invalid_marker(self):
         with self.assertRaises(DecoderException) as ctx:
             self.ubjloadb(b'A')
-        self.assertTrue(isinstance(ctx.exception.position, INTEGER_TYPES + (type(None),)))
+        self.assertIsInstance(isinstance(ctx.exception.position, (int, type(None))))
 
     def test_bool(self):
         self.assertEqual(self.ubjdumpb(True), TYPE_BOOL_TRUE)
@@ -129,23 +113,23 @@ class TestEncodeDecodePlain(TestCase):  # pylint: disable=too-many-public-method
         self.check_enc_dec(None, 1)
 
     def test_char(self):
-        self.assertEqual(self.ubjdumpb(u('a')), TYPE_CHAR + 'a'.encode('utf-8'))
+        self.assertEqual(self.ubjdumpb('a'), TYPE_CHAR + 'a'.encode('utf-8'))
         # no char, char invalid utf-8
         for suffix in (b'', b'\xfe'):
             with self.assertRaises(DecoderException):
                 self.ubjloadb(TYPE_CHAR + suffix)
-        for char in (u('a'), u('\0'), u('~')):
+        for char in ('a', '\0', '~'):
             self.check_enc_dec(char, 2)
 
     def test_string(self):
-        self.assertEqual(self.ubjdumpb(u('ab')), TYPE_STRING + TYPE_UINT8 + b'\x02' + 'ab'.encode('utf-8'))
-        self.check_enc_dec(u(''), 3)
+        self.assertEqual(self.ubjdumpb('ab'), TYPE_STRING + TYPE_UINT8 + b'\x02' + 'ab'.encode('utf-8'))
+        self.check_enc_dec('', 3)
         # invalid string size, string too short, string invalid utf-8
         for suffix in (b'\x81', b'\x01', b'\x01' + b'\xfe'):
             with self.assertRaises(DecoderException):
                 self.ubjloadb(TYPE_STRING + TYPE_INT8 + suffix)
         # Note: In Python 2 plain str type is encoded as byte array
-        for string in ('some ascii', u(r'\u00a9 with extended\u2122'), u('long string') * 100):
+        for string in ('some ascii', r'\u00a9 with extended\u2122', 'long string' * 100):
             self.check_enc_dec(string, 4, length_greater_or_equal=True)
 
     def test_int(self):
@@ -192,7 +176,7 @@ class TestEncodeDecodePlain(TestCase):  # pylint: disable=too-many-public-method
             self.check_enc_dec(Decimal(value), 4, length_greater_or_equal=True)
         # cannot compare equality, so test separately (since these evaluate to "NULL"
         for value in ('nan', '-inf', 'inf'):
-            self.assertEqual(self.ubjloadb(self.ubjdumpb(Decimal(value))), None)
+            self.assertIsNone(self.ubjloadb(self.ubjdumpb(Decimal(value))))
 
     def test_float(self):
         # insufficient length
@@ -220,7 +204,7 @@ class TestEncodeDecodePlain(TestCase):  # pylint: disable=too-many-public-method
                                expected_type=(TYPE_FLOAT64 if type_ == TYPE_FLOAT32 else type_))
         for value in ('nan', '-inf', 'inf'):
             for no_float32 in (True, False):
-                self.assertEqual(self.ubjloadb(self.ubjdumpb(float(value), no_float32=no_float32)), None)
+                self.assertIsNone(self.ubjloadb(self.ubjdumpb(float(value), no_float32=no_float32)))
         # value which results in high_prec usage
         for no_float32 in (True, False):
             self.check_enc_dec(2.22e-308, 4, expected_type=TYPE_HIGH_PREC, length_greater_or_equal=True,
@@ -358,9 +342,9 @@ class TestEncodeDecodePlain(TestCase):  # pylint: disable=too-many-public-method
                    'hp': Decimal('10e15'),
                    'char': 'a',
                    'str': 'here is a string',
-                   'unicode': u(r'\u00a9 with extended\u2122'),
+                   'unicode': r'\u00a9 with extended\u2122',
                    '': 'empty key',
-                   u(r'\u00a9 with extended\u2122'): 'unicode-key',
+                   r'\u00a9 with extended\u2122': 'unicode-key',
                    'null': None,
                    'true': True,
                    'false': False,
@@ -424,10 +408,6 @@ class TestEncodeDecodePlain(TestCase):  # pylint: disable=too-many-public-method
         mapping2 = self.ubjloadb(encoded, intern_object_keys=True)
         mapping3 = self.ubjloadb(encoded, intern_object_keys=True)
         for key1, key2 in zip(sorted(mapping2.keys()), sorted(mapping3.keys())):
-            if PY2:  # pragma: no cover
-                # interning of unicode not supported
-                self.assertEqual(key1, key2)
-            else:  # pragma: no cover
                 self.assertIs(key1, key2)
 
     def test_circular(self):
@@ -459,10 +439,6 @@ class TestEncodeDecodePlain(TestCase):  # pylint: disable=too-many-public-method
                 except Exception as ex:  # pragma: no cover  pylint: disable=broad-except
                     self.fail('Unexpected failure: %s' % ex)
 
-    def assert_raises_regex(self, *args, **kwargs):
-        # pylint: disable=deprecated-method,no-member
-        return (self.assertRaisesRegexp if PY2 else self.assertRaisesRegex)(*args, **kwargs)
-
     def test_recursion(self):
         obj = current = []
         for _ in range(getrecursionlimit() * 30):
@@ -470,11 +446,11 @@ class TestEncodeDecodePlain(TestCase):  # pylint: disable=too-many-public-method
             current.append(new_list)
             current = new_list
 
-        with self.assert_raises_regex(RuntimeError, 'recursion'):
+        with self.assertRaisesRegex(RuntimeError, 'recursion'):
             self.ubjdumpb(obj)
 
         raw = ARRAY_START * (getrecursionlimit() * 30)
-        with self.assert_raises_regex(RuntimeError, 'recursion'):
+        with self.assertRaisesRegex(RuntimeError, 'recursion'):
             self.ubjloadb(raw)
 
     def test_encode_default(self):
@@ -491,13 +467,13 @@ class TestEncodeDecodePlain(TestCase):  # pylint: disable=too-many-public-method
         obj3 = OrderedDict(sorted({'a': 1, 'b': obj1, 'c': [2, obj1]}.items()))
         obj4 = OrderedDict(sorted({'a': 1, 'b': obj2, 'c': [2, obj2]}.items()))
 
-        with self.assert_raises_regex(EncoderException, 'Cannot encode item'):
+        with self.assertRaisesRegex(EncoderException, 'Cannot encode item'):
             self.ubjdumpb(obj1)
         # explicit None should behave the same as no default
-        with self.assert_raises_regex(EncoderException, 'Cannot encode item'):
+        with self.assertRaisesRegex(EncoderException, 'Cannot encode item'):
             self.ubjdumpb(obj1, default=None)
 
-        with self.assert_raises_regex(EncoderException, '__test__marker__'):
+        with self.assertRaisesRegex(EncoderException, '__test__marker__'):
             dumpb_default(self)
 
         self.assertEqual(dumpb_default(obj1), self.ubjdumpb(obj2))
@@ -676,7 +652,7 @@ class TestEncodeDecodeFpExt(TestEncodeDecodeFp):
         output = BytesIO(self.ubjdumpb(obj)[:-(len(obj[1]) + 1)])
         output.seekable = lambda: False
 
-        with self.assert_raises_regex(DecoderException, 'Insufficient input'):
+        with self.assertRaisesRegex(DecoderException, 'Insufficient input'):
             self.ubjload(output)
 
     def test_fp_seek_invalid(self):
@@ -693,23 +669,23 @@ class TestEncodeDecodeFpExt(TestEncodeDecodeFp):
             raise OSError('bad seek')
 
         output.seek = bad_seek
-        with self.assert_raises_regex(OSError, 'bad seek'):
+        with self.assertRaisesRegex(OSError, 'bad seek'):
             self.ubjload(output)
 
         # decoding (lack of input) and seek fail - should get decoding failure
         output.seek_org(0, SEEK_END)
-        with self.assert_raises_regex(DecoderException, 'Insufficient input'):
+        with self.assertRaisesRegex(DecoderException, 'Insufficient input'):
             self.ubjload(output)
 
         # seek is not callable
         output.seek_org(0)
         output.seek = True
-        with self.assert_raises_regex(TypeError, 'not callable'):
+        with self.assertRaisesRegex(TypeError, 'not callable'):
             self.ubjload(output)
 
         # decoding (lack of input) and seek not callable - should get decoding failure
         output.seek_org(0, SEEK_END)
-        with self.assert_raises_regex(DecoderException, 'Insufficient input'):
+        with self.assertRaisesRegex(DecoderException, 'Insufficient input'):
             self.ubjload(output)
 
 
