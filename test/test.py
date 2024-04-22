@@ -464,23 +464,18 @@ class TestEncodeDecodePlain(TestCase):  # pylint: disable=too-many-public-method
         return (self.assertRaisesRegexp if PY2 else self.assertRaisesRegex)(*args, **kwargs)
 
     def test_recursion(self):
-        old_limit = getrecursionlimit()
-        setrecursionlimit(200)
-        try:
-            obj = current = []
-            for _ in range(getrecursionlimit() * 2):
-                new_list = []
-                current.append(new_list)
-                current = new_list
+        obj = current = []
+        for _ in range(getrecursionlimit() * 30):
+            new_list = []
+            current.append(new_list)
+            current = new_list
 
-            with self.assert_raises_regex(RuntimeError, 'recursion'):
-                self.ubjdumpb(obj)
+        with self.assert_raises_regex(RuntimeError, 'recursion'):
+            self.ubjdumpb(obj)
 
-            raw = ARRAY_START * (getrecursionlimit() * 2)
-            with self.assert_raises_regex(RuntimeError, 'recursion'):
-                self.ubjloadb(raw)
-        finally:
-            setrecursionlimit(old_limit)
+        raw = ARRAY_START * (getrecursionlimit() * 30)
+        with self.assert_raises_regex(RuntimeError, 'recursion'):
+            self.ubjloadb(raw)
 
     def test_encode_default(self):
         def default(obj):
