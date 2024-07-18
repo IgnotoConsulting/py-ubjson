@@ -33,8 +33,6 @@ from distutils.command.build_ext import build_ext
 from distutils.errors import CCompilerError
 from distutils.errors import DistutilsPlatformError, DistutilsExecError
 
-from ubjson import __version__ as version
-
 
 def load_description(filename):
     script_dir = os.path.abspath(os.path.dirname(__file__))
@@ -72,24 +70,6 @@ COMPILE_ARGS = ['-std=c99']
 #                  '-pedantic']
 
 setup(
-    name='py-ubjson',
-    version=version,
-    description='Universal Binary JSON encoder/decoder',
-    long_description=load_description('README.md'),
-    long_description_content_type='text/markdown',
-    author='Iotic Labs Ltd',
-    author_email='info@iotic-labs.com',
-    maintainer='Iotic Labs Ltd',
-    maintainer_email='vilnis.termanis@iotic-labs.com',
-    url='https://github.com/Iotic-Labs/py-ubjson',
-    license='Apache License 2.0',
-    packages=['ubjson'],
-    extras_require={
-        'dev': [
-            'Pympler>=0.7 ,<0.8',
-            'coverage>=4.5.3,<4.6'
-        ]
-    },
     zip_safe=False,
     ext_modules=([Extension(
         '_ubjson',
@@ -98,22 +78,4 @@ setup(
         # undef_macros=['NDEBUG']
     )] if BUILD_EXTENSIONS else []),
     cmdclass={"build_ext": BuildExtWarnOnFail},
-    keywords=['ubjson', 'ubj'],
-    classifiers=[
-        'Development Status :: 5 - Production/Stable',
-        'License :: OSI Approved :: Apache Software License',
-        'Intended Audience :: Developers',
-        'Programming Language :: C',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3.2',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
-        'Topic :: Software Development :: Libraries',
-        'Topic :: Software Development :: Libraries :: Python Modules'
-    ]
 )

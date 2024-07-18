@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "py-ubjson"
+dynamic = ["version"]
+description="Universal Binary JSON encoder/decoder."
+readme = { file = "README.md", content-type = "text/markdown" }
+authors = [
+    { name = "Iotic Labs Ltd", email = "info@iotic-labs.com" }
+]
+maintainers = [
+    { name = "Iotic Labs Ltd", email = "vilnis.termanis@iotic-labs.com" }
+]
+license = { text = "Apache-2.0" }
+keywords = ["ubjson", "ubj"]
+classifiers = [
+    'Development Status :: 5 - Production/Stable',
+    'License :: OSI Approved :: Apache Software License',
+    'Intended Audience :: Developers',
+    'Programming Language :: C',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 2.7',
+    'Programming Language :: Python :: 3.2',
+    'Programming Language :: Python :: 3.3',
+    'Programming Language :: Python :: 3.4',
+    'Programming Language :: Python :: 3.5',
+    'Programming Language :: Python :: 3.6',
+    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Topic :: Software Development :: Libraries',
+    'Topic :: Software Development :: Libraries :: Python Modules'
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+# Used in combination of the MANIFEST.in to exclude these two directories from the binary
+# wheel.
+exclude = ["src", "test"]
+
+[tool.setuptools.dynamic]
+version = { attr = "ubjson.__version__" }
+
+[project.urls]
+repository = "https://github.com/Iotic-Labs/py-ubjson"
+
+[project.optional-dependencies]
+dev = ["Pympler>=0.7,<0.8", "coverage>=4.5.3,<4.6"]
